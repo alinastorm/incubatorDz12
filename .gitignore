@@ -1,0 +1,8 @@
+dist
+coverage
+node_modules
+*.rar
+.vscode
+.env
+ssl
+.pem

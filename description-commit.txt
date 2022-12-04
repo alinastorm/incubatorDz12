@@ -1,0 +1,7 @@
+1.0.0 init
+1.0.1 feat:mongoose repository
+1.0.2 feat:fix types
+1.0.3 feat:testa mongoose
+1.0.4 feat:refactor mongoose . Without repository
+1.0.5 feat:refactor mongoose . Without repository 2 Static class Repository
+

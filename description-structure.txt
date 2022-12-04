@@ -1,0 +1,15 @@
+Подход
+    Слои
+        Представление (Патерны)-(Принципы)
+                
+
+
+Components    
+    Controller
+        router (middleware)/(GRASP[Information expert])
+        validator (middleware)/(GRASP[Information expert])         
+        controller   ()/(GRASP[Information expert]) 
+    Services
+        service ()-()
+    Data Access Layer
+        repository (repository)/(GRASP[Information expert] ,SOLID[Single responsibility])           

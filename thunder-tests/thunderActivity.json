@@ -1,0 +1,77 @@
+[
+  {
+    "_id": "8d827cbe-4098-41a3-aaec-f2b30fea9222",
+    "colId": "history",
+    "containerId": "",
+    "name": "DELETE ALL DATA",
+    "url": "https://ubt.by:9002/testing/all-data",
+    "method": "DELETE",
+    "sortNum": 0,
+    "created": "2022-11-23T14:34:02.940Z",
+    "modified": "2022-11-23T14:34:02.940Z",
+    "headers": [],
+    "params": [],
+    "tests": []
+  },
+  {
+    "_id": "9955237e-8a3a-45bf-b6cc-aabb5c7a0a56",
+    "colId": "history",
+    "containerId": "",
+    "name": "https://ubt.by:9002/testing/all-data",
+    "url": "https://ubt.by:9002/testing/all-data",
+    "method": "GET",
+    "sortNum": 0,
+    "created": "2022-11-23T14:36:05.887Z",
+    "modified": "2022-11-23T14:36:05.887Z",
+    "headers": [],
+    "params": [],
+    "tests": []
+  },
+  {
+    "_id": "ac4abfce-eaaf-41cd-831b-201814a250dc",
+    "colId": "history",
+    "containerId": "",
+    "name": "GET USERS",
+    "url": "https://ubt.by:9002/users",
+    "method": "GET",
+    "sortNum": 0,
+    "created": "2022-11-23T14:36:48.911Z",
+    "modified": "2022-11-23T14:36:48.911Z",
+    "headers": [],
+    "params": [],
+    "auth": {
+      "type": "basic",
+      "basic": {
+        "username": "admin",
+        "password": "qwerty"
+      }
+    },
+    "tests": []
+  },
+  {
+    "_id": "7d1ad74c-7449-40ac-822c-c8929c65a5ca",
+    "colId": "history",
+    "containerId": "",
+    "name": "CREATE USER",
+    "url": "https://ubt.by:9002/users",
+    "method": "POST",
+    "sortNum": 0,
+    "created": "2022-11-23T14:36:57.172Z",
+    "modified": "2022-11-23T14:37:45.341Z",
+    "headers": [],
+    "params": [],
+    "body": {
+      "type": "json",
+      "raw": "{\n  \"login\": \"sasa\",\n  \"password\": \"qwerty\",\n  \"email\": \"7534640@gmail.com\"\n}",
+      "form": []
+    },
+    "auth": {
+      "type": "basic",
+      "basic": {
+        "username": "admin",
+        "password": "qwerty"
+      }
+    },
+    "tests": []
+  }
+]

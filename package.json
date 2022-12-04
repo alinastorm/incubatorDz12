@@ -1,0 +1,60 @@
+{
+  "name": "IncubatorDz",
+  "version": "1.0.0",
+  "description": "requests counter\u001b[D\u001b[D\u001b[D\u001b[D\u001b[D\u001b[D\u001b[D\u001b[D\u001b[D\u001b[D\u001b[D\u001b[D\u001b[D\u001b[D\u001b[D\u001b[Dhome work requests counter",
+  "main": "dist/main.js",
+  "type": "module",
+  "scripts": {
+    "start": "npm run build & node --experimental-specifier-resolution=node -r dotenv/config dist/main.js",
+    "test": "jest  --runInBand --forceExit --experimental-specifier-resolution=node --setupFiles dotenv/config",
+    "testSilent": "jest  --runInBand --watch --silent --forceExit --experimental-specifier-resolution=node --setupFiles dotenv/config ",
+    "dev": "nodemon -e ts --exec \"npm run compile\"",
+    "compile": "tsc && node --experimental-specifier-resolution=node -r dotenv/config dist/main.js",
+    "build": "tsc"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/alinastorm/IT-KAMASUTRA.git"
+  },
+  "keywords": [
+    "learn"
+  ],
+  "author": "AlexGr",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/alinastorm/IT-KAMASUTRA/issues"
+  },
+  "homepage": "https://github.com/alinastorm/IT-KAMASUTRA#readme",
+  "devDependencies": {
+    "@types/cookie-parser": "^1.4.3",
+    "@types/express": "^4.17.14",
+    "@types/jest": "^29.1.2",
+    "@types/node": "^18.7.18",
+    "@types/supertest": "^2.0.12",
+    "ajv": "^8.11.0",
+    "jest": "^29.1.2",
+    "nodemon": "^2.0.19",
+    "supertest": "^6.3.0",
+    "ts-jest": "^29.0.3"
+  },
+  "dependencies": {
+    "@types/bcrypt": "^5.0.0",
+    "@types/jsonwebtoken": "^8.5.9",
+    "@types/mongoose": "^5.11.97",
+    "@types/nodemailer": "^6.4.6",
+    "@types/uuid": "^8.3.4",
+    "bcrypt": "^5.1.0",
+    "body-parser": "^1.20.0",
+    "cookie-parser": "^1.4.6",
+    "date-fns": "^2.29.3",
+    "dotenv": "^16.0.2",
+    "express": "^4.18.1",
+    "express-validator": "^6.14.2",
+    "jsonwebtoken": "^8.5.1",
+    "mongodb": "^4.10.0",
+    "mongoose": "^6.7.4",
+    "nodemailer": "^6.8.0",
+    "typescript": "^4.9.3",
+    "uuid": "^9.0.0"
+  }
+}
