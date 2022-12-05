@@ -70,4 +70,4 @@ export const commentBdSchema = new Schema<CommentBdModel, {}, RepositoryMongoose
 //Метод достает методы Класса и разносит их static в статичские ,методы инстанса в инстанс. 
 commentBdSchema.loadClass(RepositoryMongoose);
 //создаем модель(Класс) из схемы с сатическими и инстанс методами
-export const CommentModel = model("posts", commentBdSchema)
+export const CommentModel = model("comments", commentBdSchema)

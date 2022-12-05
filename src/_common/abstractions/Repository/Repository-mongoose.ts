@@ -1,5 +1,5 @@
 import { ObjectId } from 'mongodb';
-import { FilterQuery, Model, Document } from 'mongoose';
+import { FilterQuery, Model,Schema, Document, LeanDocumentOrArray, LeanDocument, QueryWithHelpers, HydratedDocumentFromSchema, HydratedDocument } from 'mongoose';
 import { IObject } from '../../types/types';
 import { Paginator } from './repository-mongodb-types';
 import { SearchPaginationMongooseModel } from './repository-mongoose-type';
@@ -97,8 +97,12 @@ export class RepositoryMongoose extends Model {
 
         return result
     }
-    static async repositoryReadOne<T>(id: string): Promise<T> {
-        const result: any = await this.findOne({ _id: new ObjectId(id) }).lean()
+    // <LeanResultType = RawDocType extends Document ? LeanDocumentOrArray<ResultType> : LeanDocumentOrArrayWithRawType<ResultType, Require_id<RawDocType>>>
+    // Omit<T, Exclude<keyof Document, '_id' | 'id' | '__v'> | '$isSingleNested'>
+    // (T extends Document<any, any, any> ? LeanDocumentOrArray<import("mongoose").HydratedDocument<T, {}, {}> | null> : import("mongoose").LeanDocumentOrArrayWithRawType<import("mongoose").HydratedDocument<T, {}, {}> | null, import("mongoose").Require_id<T>>) | ({ id: any; } & Omit<NonNullable<T extends Document<any, any, any> ? LeanDocumentOrArray<import("mongoose").HydratedDocument<T, {}, {}> | null> : import("mongoose").LeanDocumentOrArrayWithRawType<import("mongoose").HydratedDocument<T, {}, {}> | null, import("mongoose").Require_id<T>>>, "_id">)
+    // LeanDocument<import("mongoose").HydratedDocument<{},{},T>>
+    static async repositoryReadOne<T>( id: string): Promise<T> {
+        const result = await this.findOne({ _id: new ObjectId(id) }).lean()
         if (!result) return result
         const { _id, ...other } = result
         return { id: _id.toString(), ...other }
@@ -128,3 +132,11 @@ export class RepositoryMongoose extends Model {
 }
 
 
+// export async function repositoryReadOne<T = typeof this.schema>(this: Model<any>, id: string): Promise<T> {
+//     const result = await this.findOne({ _id: new ObjectId(id) }).lean()
+//     if (!result) return result
+//     const { _id, ...other } = result
+//     return { id: _id.toString(), ...other }
+// }
+// let a = { name: "sasa", repositoryReadOne }
+// const b = await a.repositoryReadOne("as")

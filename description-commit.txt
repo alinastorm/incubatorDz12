@@ -4,4 +4,5 @@
 1.0.3 feat:testa mongoose
 1.0.4 feat:refactor mongoose . Without repository
 1.0.5 feat:refactor mongoose . Without repository 2 Static class Repository
+1.0.6 feat:refactor complete
 

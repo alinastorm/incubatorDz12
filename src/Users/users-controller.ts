@@ -5,9 +5,10 @@ import { UserBdModel, UserInputModel, UsersSearchPaginationMongoDbModel, UserVie
 import { HTTP_STATUSES, RequestWithBody, RequestWithParams, RequestWithQuery, ResponseWithBodyCode, ResponseWithCode } from '../_common/services/http/types';
 import { Paginator, SearchPaginationMongoDbModel } from '../_common/abstractions/Repository/repository-mongodb-types';
 import { SearchPaginationMongooseModel } from '../_common/abstractions/Repository/repository-mongoose-type';
-import { FilterQuery } from 'mongoose';
+import { FilterQuery, Model } from 'mongoose';
 import { UserModel } from './user-model';
 import { AuthModel, AuthViewModel } from '../Auth/Authentications/auth-model';
+
 
 
 class UserController {
@@ -47,9 +48,7 @@ class UserController {
         const passwordHash = await cryptoService.generatePasswordHash(password)
         const elementAuth: Omit<AuthViewModel, "id"> = { passwordHash, userId, createdAt }
         const idAuth: string = await AuthModel.repositoryCreateOne(elementAuth)
-
-        const user: UserBdModel | null = await UserModel.repositoryReadOne(userId)
-
+        const user = await UserModel.repositoryReadOne<UserBdModel>(userId)
         if (!user) return res.status(HTTP_STATUSES.NOT_FOUND_404)
         const { confirm, ...other } = user
         const result = other
