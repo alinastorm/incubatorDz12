@@ -1,7 +1,7 @@
 import { Request } from 'express';
 import { Paginator } from '../_common/abstractions/Repository/repository-mongodb-types';
 import { HTTP_STATUSES, RequestWithAccessTokenJWTBearer, RequestWithBody, RequestWithParams, RequestWithParamsBody, RequestWithParamsQuery, RequestWithQuery, ResponseWithBodyCode, ResponseWithCode } from '../_common/services/http/types';
-import { LikeDetailsViewModel, PostBdModel, PostInputModel, PostModel, postSchema, PostViewModel } from './post-model';
+import { LikeDetailsViewModel, PostBdModel, postDataMapper, PostInputModel, PostModel, postSchema, PostViewModel } from './post-model';
 import { SearchPaginationMongooseModel } from '../_common/abstractions/Repository/repository-mongoose-type';
 import { FilterQuery, QueryOptions } from 'mongoose';
 import { BlogBdModel, BlogModel } from '../Blogs/blog-model';
@@ -129,35 +129,19 @@ class PostsController {
                 LikeStatus.None
             return result
         });
-  
 
-        const post = await PostModel.findById(postId).lean({ virtuals: true }) as any
+
+        const post = await PostModel.findById(postId).lean({
+            virtuals: true,
+            //   transform: postDataMapper,
+        }).then(postDataMapper)
+
         if (!post) {
             return res.status(HTTP_STATUSES.NOT_FOUND_404).send("post ")
         }
-        const result: PostViewModel = {
-            id: post._id,
-            title: post.title,
-            blogId: post.blogId,
-            blogName: post.blogName,
-            content: post.content,
-            createdAt: post.createdAt,
-            extendedLikesInfo: {
-                dislikesCount: post.extendedLikesInfo.dislikesCount,
-                likesCount: post.extendedLikesInfo.likesCount,
-                myStatus: post.extendedLikesInfo.myStatus,
-                newestLikes: post.extendedLikesInfo.newestLikes,
-            },
-            shortDescription: post.shortDescription,
-        }
-        // function xform (doc, ret, options) {
-        //     return { inline: ret.name, custom: true }
-        //   }
-          
-        //   // pass the transform as an inline option
-        //   post.toObject({ transform: xform }); // { inline: 'Wreck-it Ralph', custom: true }
 
-        res.status(HTTP_STATUSES.OK_200).send(result)
+
+        res.status(HTTP_STATUSES.OK_200).send(post)
     }
     async updateOne(
         req: RequestWithParamsBody<{ postId: string }, PostInputModel>,

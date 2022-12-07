@@ -1,4 +1,4 @@
-import { Schema, model } from "mongoose";
+import { Schema, model, LeanDocument } from "mongoose";
 import { LikeStatus } from "../Likes/like-model";
 import { RepositoryMongoose } from "../_common/abstractions/Repository/Repository-mongoose";
 import mongooseLeanVirtuals from 'mongoose-lean-virtuals'
@@ -23,7 +23,7 @@ export interface ExtendedLikesInfoViewModel {
     myStatus: LikeStatus //string Enum: Array[3]    
     /** Last 3 likes (status "Like") */
     /** Virtual prop Mongoose*/
-    newestLikes: [LikeDetailsViewModel] | []
+    newestLikes: LikeDetailsViewModel[] | []
 }
 export interface PostViewModel {
     id: string
@@ -50,6 +50,14 @@ export interface ExtendedLikesInfoBdModel {
     likes: [LikeDetailsViewModel],
     /** Deslike */
     deslike: [LikeDetailsViewModel]
+    /** Virtual field */
+    dislikesCount: number
+    /** Virtual field */
+    likesCount: number
+    /** Virtual field */
+    myStatus: LikeStatus
+    /** Virtual field */
+    newestLikes: LikeDetailsViewModel[] | []
 }
 export interface LikeDetailsViewModel {
     /** Details about single like*/
@@ -97,20 +105,8 @@ export const postSchema = new Schema<PostBdModel, {}, RepositoryMongoose, {}, {}
     blogName: String,
     createdAt: String,//TODO в дз не обязательный в интерфей
     extendedLikesInfo: { type: ExtendedLikesInfoViewModelSchema, default: () => ({}) },
-    // extendedLikesInfo:  ExtendedLikesInfoViewModelSchema,
 }, {
     versionKey: false,
-    // toObject: {
-    //     // hide: "_id",
-    //     transform(doc, ret, options) {
-    //         if (options.hide) {
-    //             options.hide.split(' ').forEach(function (prop) {
-    //                 delete ret[prop];
-    //             });
-    //         }
-    //         return ret;
-    //     },
-    // }
 })
 // postSchema.pre(/^find/, function (next) {
 // const t = this
@@ -138,8 +134,22 @@ postSchema.loadClass(RepositoryMongoose);
 //создаем модель(Класс) из схемы с сатическими и инстанс методами
 export const PostModel = model("posts", postSchema)
 
-
-
-// doc.toObject();                                        // { secret: 47, name: 'Wreck-it Ralph' }
-// doc.toObject({ hide: 'secret _id', transform: false });// { _id: 'anId', secret: 47, name: 'Wreck-it Ralph' }
-// doc.toObject({ hide: 'secret _id', transform: true }); // { name: 'Wreck-it Ralph' }
+export function postDataMapper(value: LeanDocument<PostBdModel & Required<{ _id: string; }>> | null): PostViewModel | null {
+    if (!value) return null
+    const result: PostViewModel = {
+        id: value._id,
+        title: value.title,
+        blogId: value.blogId,
+        blogName: value.blogName,
+        content: value.content,
+        createdAt: value.createdAt,
+        extendedLikesInfo: {
+            dislikesCount: value.extendedLikesInfo.dislikesCount,
+            likesCount: value.extendedLikesInfo.likesCount,
+            myStatus: value.extendedLikesInfo.myStatus,
+            newestLikes: value.extendedLikesInfo.newestLikes,
+        },
+        shortDescription: value.shortDescription,
+    }
+    return result;
+}
