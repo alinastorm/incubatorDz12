@@ -4,7 +4,7 @@ import { CommentInputModel, CommentViewModel, LikesInfoViewModel } from "../Comm
 import { BlogInputModel, BlogViewModel } from "../Blogs/blog-model"
 import { UserInputModel } from "../Users/user-model"
 import { LoginInputModel } from "../Auth/Authentications/auth-model"
-import { PostInputModel, PostViewModel } from "../Posts/post-model"
+import { ExtendedLikesInfoViewModel, LikeDetailsViewModel, PostInputModel, PostViewModel } from "../Posts/post-model"
 import { LikeInputModel, LikeStatus } from "./like-model"
 import mongooseClinet from "../_common/services/mongoose/mongoose-client"
 
@@ -74,14 +74,42 @@ describe.only(`${mainRout}`, () => {
     let accessTokenRecived: string
     let refreshTokenRecived: string
     let postReceived: PostViewModel
+    const LikeDetailsViewSchema: LikeDetailsViewModel = {
+        addedAt: expect.any(String), //	string($date - time)
+        userId: expect.any(String), //	string    nullable: true,
+        login: expect.any(String), //	string    nullable: true}
+    }
+    const ExtendedLikesInfoViewSchema: ExtendedLikesInfoViewModel = {
+        likesCount: expect.any(Number),
+        dislikesCount: expect.any(Number), //	integer($int32) 
+        myStatus: expect.any(String), //string Enum: Array[3]    
+        newestLikes: [LikeDetailsViewSchema]
+    }
+    const newExtendedLikesInfoViewSchema: ExtendedLikesInfoViewModel = {
+        likesCount: 0,
+        dislikesCount: 0, //	integer($int32) 
+        myStatus: LikeStatus.None, //string Enum: Array[3]    
+        newestLikes: []
+    }
     const postViewSchema: PostViewModel = {
         id: expect.any(String),
-        title: expect.any(String),
+        title: expect.any(String), 
         shortDescription: expect.any(String),
         content: expect.any(String),
         blogId: expect.any(String),
         blogName: expect.any(String),
-        createdAt: expect.any(String)
+        createdAt: expect.any(String),
+        extendedLikesInfo: ExtendedLikesInfoViewSchema
+    }
+    const newPostViewSchema: PostViewModel = {
+        id: expect.any(String),
+        title: expect.any(String), 
+        shortDescription: expect.any(String),
+        content: expect.any(String),
+        blogId: expect.any(String),
+        blogName: expect.any(String),
+        createdAt: expect.any(String),
+        extendedLikesInfo: newExtendedLikesInfoViewSchema,
     }
     let newPost: PostInputModel = {
         "title": "string",
@@ -151,7 +179,7 @@ describe.only(`${mainRout}`, () => {
 
 
         expect(checkData(res, "status", 201)).toBe(true)
-        expect(res.body).toMatchObject(postViewSchema)
+        expect(res.body).toMatchObject(newPostViewSchema)
         postReceived = res.body
     })
     //создаем Comment в Post  с accessToken

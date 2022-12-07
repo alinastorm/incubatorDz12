@@ -2,7 +2,7 @@ import request from "supertest"
 import httpService from "../_common/services/http/http-service"
 import { BlogInputModel, BlogViewModel } from "./blog-model"
 import { Paginator } from "../_common/abstractions/Repository/repository-mongodb-types"
-import { PostInputModel, PostViewModel } from "../Posts/post-model"
+import { ExtendedLikesInfoViewModel, LikeDetailsViewModel, PostInputModel, PostViewModel } from "../Posts/post-model"
 import mongooseClinet from "../_common/services/mongoose/mongoose-client"
 
 
@@ -61,14 +61,26 @@ describe("Blogs", () => {
         "content": "string",
         "blogId": "123"
     }
+    const LikeDetailsViewSchema: LikeDetailsViewModel = {
+        addedAt: expect.any(String), //	string($date - time)
+        userId: expect.any(String), //	string    nullable: true,
+        login: expect.any(String), //	string    nullable: true}
+    }
+    const ExtendedLikesInfoViewSchema: ExtendedLikesInfoViewModel = {
+        likesCount: expect.any(Number),
+        dislikesCount: expect.any(Number), //	integer($int32) 
+        myStatus: expect.any(String), //string Enum: Array[3]    
+        newestLikes: [LikeDetailsViewSchema]
+    }
     const postViewSchema: PostViewModel = {
         id: expect.any(String),
-        title: expect.any(String),
+        title: expect.any(String), 
         shortDescription: expect.any(String),
         content: expect.any(String),
         blogId: expect.any(String),
         blogName: expect.any(String),
-        createdAt: expect.any(String)
+        createdAt: expect.any(String),
+        extendedLikesInfo: ExtendedLikesInfoViewSchema
     }
 
     test('All delete', async () => {

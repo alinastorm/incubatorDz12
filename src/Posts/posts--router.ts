@@ -60,6 +60,7 @@ postsRouter.post(`/posts`,
     postsController.createOne
 )
 postsRouter.get(`/posts/:postId`,
+<any> authHeadersJwtAccessTokenHeaders,
     postIdParamValidationMiddleware,
     code400,
     postParamIdInBDValidationMiddleware,
@@ -84,4 +85,10 @@ postsRouter.delete(`/posts/:postId`,
     postParamIdInBDValidationMiddleware,
     postsController.deleteOne
 )
-
+postsRouter.put("/posts/:postId/like-status",
+    <any> authHeadersJwtAccessTokenHeaders401,
+    // likeStatusModelSchemaValidationMiddleware,
+    // commentIdUriParamValidationMiddleware,
+    // code400,
+    postsController.likeUnlike
+)

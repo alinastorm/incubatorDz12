@@ -19,7 +19,6 @@ export const authHeadersJwtAccessTokenHeaders401 = async (
 
     if (type !== "Bearer" || !accessToken) return res.status(HTTP_STATUSES.UNAUTHORIZED_401).send("no type bearer or accessToken")
     // const isBasicAuthorization = req.headers.authorization.startsWith('Basic')
-    console.log("accessToken:", accessToken);
 
     // //проверяем в списаных
     // const filter: Omit<RottenToken, "expirationDate" | 'id'> = { refreshToken: accessToken }

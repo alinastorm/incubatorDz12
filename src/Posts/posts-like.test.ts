@@ -1,12 +1,13 @@
 import request from "supertest"
 import httpService from "../_common/services/http/http-service"
 import { Paginator } from "../_common/abstractions/Repository/repository-mongodb-types"
-import { CommentBdModel, CommentInputModel, CommentModel, CommentViewModel, LikesInfoViewModel } from "./comment-model"
 import { ExtendedLikesInfoViewModel, LikeDetailsViewModel, PostInputModel, PostViewModel } from "../Posts/post-model"
 import { UserInputModel } from "../Users/user-model"
 import { LoginInputModel } from "../Auth/Authentications/auth-model"
 import { BlogInputModel, BlogViewModel } from "../Blogs/blog-model"
 import mongooseClinet from "../_common/services/mongoose/mongoose-client"
+import { CommentBdModel, CommentInputModel, CommentModel, CommentViewModel, LikesInfoViewModel } from "../Comments/comment-model"
+import { LikeInputModel, LikeStatus } from "../Likes/like-model"
 
 
 //Express
@@ -82,14 +83,20 @@ describe(`${mainRout}`, () => {
         login: expect.any(String), //	string    nullable: true}
     }
     const ExtendedLikesInfoViewSchema: ExtendedLikesInfoViewModel = {
-        likesCount: expect.any(Number),
-        dislikesCount: expect.any(Number), //	integer($int32) 
-        myStatus: expect.any(String), //string Enum: Array[3]    
+        likesCount: 0,
+        dislikesCount: 0, //	integer($int32) 
+        myStatus: LikeStatus.None, //string Enum: Array[3]    
+        newestLikes: []
+    }
+    const ExtendedLikesInfoLikeViewSchema: ExtendedLikesInfoViewModel = {
+        likesCount: 1,
+        dislikesCount: 0, //	integer($int32) 
+        myStatus: LikeStatus.Like, //string Enum: Array[3]    
         newestLikes: [LikeDetailsViewSchema]
     }
     const postViewSchema: PostViewModel = {
         id: expect.any(String),
-        title: expect.any(String), 
+        title: expect.any(String),
         shortDescription: expect.any(String),
         content: expect.any(String),
         blogId: expect.any(String),
@@ -97,7 +104,19 @@ describe(`${mainRout}`, () => {
         createdAt: expect.any(String),
         extendedLikesInfo: ExtendedLikesInfoViewSchema
     }
-
+    const postViewSchemaLike: PostViewModel = {
+        id: expect.any(String),
+        title: expect.any(String),
+        shortDescription: expect.any(String),
+        content: expect.any(String),
+        blogId: expect.any(String),
+        blogName: expect.any(String),
+        createdAt: expect.any(String),
+        extendedLikesInfo: ExtendedLikesInfoLikeViewSchema
+    }
+    const likeLike: LikeInputModel = {
+        "likeStatus": LikeStatus.Like
+    }
     let postReceived: PostViewModel
     //auth
     const user: UserInputModel = {
@@ -125,23 +144,24 @@ describe(`${mainRout}`, () => {
         websiteUrl: expect.any(String),
         createdAt: expect.any(String),
     }
-    xtest(`All delete`, async () => {
+    xtest(`1 All delete`, async () => {
         const { status } = await request(app).delete("/testing/all-data")
         expect(status).toBe(204)
     })
-    xtest(`GET ${mainRout} =[null]`, async () => {
+    xtest(`2 GET ${mainRout} =[null]`, async () => {
         const comments = await CommentModel.repositoryReadAll<CommentBdModel>()
         expect(comments).toStrictEqual([])
 
     })
-    test(`Create User`, async () => {
+
+    test(`3 Create User`, async () => {
         const { status } = await request(app).post("/users")
             .set('Authorization', 'Basic YWRtaW46cXdlcnR5')
             .send(user)
 
         expect(status).toBe(201)
     })
-    test(`Auth login`, async () => {
+    test(`4 Auth login`, async () => {
         const res = await request(app).post("/auth/login")
             .send(auth)
 
@@ -158,91 +178,53 @@ describe(`${mainRout}`, () => {
         expect(tokenName).toBe("refreshToken")
         expect(refreshTokenRecived).toStrictEqual(expect.any(String))
     })
-    test('POST Create Blog ', async () => {
-        const req = await request(app)
+    test('5 Создаем блог для публикации поста ', async () => {
+        const { status, body } = await request(app)
             .post("/blogs")
             .set('Authorization', 'Basic YWRtaW46cXdlcnR5')
             .send(newBlog)
 
+        expect(status).toBe(201)
 
-        expect(checkData(req, "statusCode", 201)).toBe(true)
-        expect(req.body).toMatchObject(blogSchema)
-
-        blogReceived = req.body
-        newPost.blogId = blogReceived.id
     })
-    test('POST Create Post', async () => {
+    test('6 Получаем блоги для публикации поста', async () => {
+        const { status, body } = await request(app).get("/blogs")
+        expect(status).toBe(200)
+        newPost.blogId = body.items[0].id
+    })
+    test('7 Публикуем пост', async () => {
         const { status, body } = await request(app).post("/posts")
             .set('Authorization', 'Basic YWRtaW46cXdlcnR5')
             .send(newPost)
+
 
         expect(status).toBe(201)
         expect(body).toMatchObject(postViewSchema)
         postReceived = body
     })
-    test(`POST Create Comment unauthorized`, async () => {
-        const { status, body } = await request(app).post(`/posts/${postReceived.id}/comments`)
-            .send(newElement)
-
-        expect(status).toBe(401)
-    })
-    test(`POST Create Comment authorized`, async () => {
-        const req = await request(app).post(`/posts/${postReceived.id}/comments`)
+    //Лайкаем Post
+    test(`8 PUT POST set like Like`, async () => {
+        const { status, body } = await request(app).put(`/posts/${postReceived?.id}/like-status`)
             .auth(accessTokenRecived, { type: 'bearer' })
-            .send(newElement)
-
-
-        expect(checkData(req, "statusCode", 201)).toBe(true)
-        expect(req.body).toMatchObject(elementSchema)
-
-        elementReceived = req.body
-    })
-    test(`GET ${mainRout} ID extends ${mainRout}Schema`, async () => {
-        const { status, body } = await request(app).get(`/${mainRout}/${elementReceived?.id}`)
-
-        expect(status).toBe(200)
-        expect(body).toMatchObject(elementSchema)
-        expect(body).toStrictEqual(elementReceived)
-    })
-    test(`PUT ${mainRout} `, async () => {
-
-        const { status } = await request(app).put(`/${mainRout}/${elementReceived?.id}`)
-            .auth(accessTokenRecived, { type: 'bearer' })
-            .send(elementToUpdate)
-
+            .send(likeLike)
         expect(status).toBe(204)
 
     })
-    test(`GET ${mainRout} after update = new elem `, async () => {
+    //Получаем комментарий по id смотрим есть ли лайк и likesCount 1 с accessToken0123
 
-        const { status, body } = await request(app).get(`/${mainRout}/${elementReceived?.id}`)
-
-        expect(status).toBe(200)
-        expect(body).toStrictEqual({ ...elementReceived, ...elementToUpdate })
-
-    })
-    test.skip(`GET ${mainRout}S after update`, async () => {
-
-        const { status, body } = await request(app).get(`/${mainRout}`)
-
-        expect(status).toBe(200)
-        expect(body).toMatchObject(paginationSchema)//проверка схемы пагинации
-        expect(body).toStrictEqual(elementPaginationSchema)//проверка схемы пагинации и  элемента
-        expect(body.items.length).toBe(1)
-        expect(body.items[0]).toStrictEqual({ ...elementReceived, ...elementToUpdate })
-    })
-    test(`Delete ${mainRout} by ID`, async () => {
-
-        const res = await request(app)
-            .delete(`/${mainRout}/${elementReceived?.id}`)
+    test(`9 GET POst by ID is like like`, async () => {
+        const { status, body } = await request(app).get(`/posts/${postReceived?.id}`)
             .auth(accessTokenRecived, { type: 'bearer' })
+        expect(body).toMatchObject(postViewSchemaLike)
 
-
-        expect(checkData(res, "status", 204)).toBe(true)
-    })
-    test(`GET ${mainRout} after delete `, async () => {
-        const { status } = await request(app).get(`/${mainRout}/${elementReceived?.id}`)
-        expect(status).toBe(404)
+        expect(status).toBe(200)
+        // expect(body).toMatchObject(commentSchema)
+        // expect(body.likesInfo).toMatchObject(likesInfo)
+        // expect(body.likesInfo).toStrictEqual({
+        //     dislikesCount: 0,
+        //     likesCount: 1,
+        //     myStatus: LikeStatus.Like,
+        // })
 
     })
 })

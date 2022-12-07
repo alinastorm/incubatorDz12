@@ -6,7 +6,7 @@ import { commentsInputModelSchemaValidationMiddleware } from '../_common/validat
 import { authHeadersJwtAccessTokenHeaders401 } from '../_common/guards/JwtAccessTokenHeaders401-middleware';
 import commentsController from './comments-controller';
 import { authHeadersJwtAccessTokenHeaders } from '../_common/guards/JwtAccessTokenHeaders-middleware';
-import likeController from '../Likes/like-controller';
+import likeController from '../Likes/likes-controller';
 import { likeStatusModelSchemaValidationMiddleware } from '../_common/validators/likeStatusSchema-validation-middleware';
 
 

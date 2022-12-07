@@ -2,7 +2,7 @@ import request from "supertest"
 import httpService from "../_common/services/http/http-service"
 import { BlogInputModel, BlogViewModel } from "../Blogs/blog-model"
 import { Paginator } from "../_common/abstractions/Repository/repository-mongodb-types"
-import { PostInputModel, PostViewModel } from "./post-model"
+import { ExtendedLikesInfoViewModel, LikeDetailsViewModel, PostInputModel, PostViewModel } from "./post-model"
 import mongooseClinet from "../_common/services/mongoose/mongoose-client"
 
 
@@ -33,6 +33,17 @@ describe("Posts", () => {
     /** ****************************************************************************************** */
     let blogReceived: BlogViewModel
     let postReceived: PostViewModel
+    const LikeDetailsViewSchema: LikeDetailsViewModel = {
+        addedAt: expect.any(String), //	string($date - time)
+        userId: expect.any(String), //	string    nullable: true,
+        login: expect.any(String), //	string    nullable: true}
+    }
+    const ExtendedLikesInfoViewSchema: ExtendedLikesInfoViewModel = {
+        likesCount: expect.any(Number),
+        dislikesCount: expect.any(Number), //	integer($int32) 
+        myStatus: expect.any(String), //string Enum: Array[3]    
+        newestLikes: [LikeDetailsViewSchema]
+    }
     const postViewSchema: PostViewModel = {
         id: expect.any(String),
         title: expect.any(String),
@@ -40,7 +51,8 @@ describe("Posts", () => {
         content: expect.any(String),
         blogId: expect.any(String),
         blogName: expect.any(String),
-        createdAt: expect.any(String)
+        createdAt: expect.any(String),
+        extendedLikesInfo: ExtendedLikesInfoViewSchema
     }
     const postPaginationSchema: Paginator<PostViewModel> = {
         page: expect.any(Number),
@@ -83,7 +95,7 @@ describe("Posts", () => {
             "items": []
         })
 
-    })  
+    })
     test('Создаем пост unauthorized', async () => {
         const req = await request(app)
             .post("/posts")
@@ -99,7 +111,7 @@ describe("Posts", () => {
 
         expect(status).toBe(201)
 
-    })  
+    })
     test('Получаем блоги для публикации поста', async () => {
         const { status, body } = await request(app).get("/blogs")
         expect(status).toBe(200)
@@ -131,6 +143,8 @@ describe("Posts", () => {
         })
 
     })
+
+
     test('Получаем пост по id', async () => {
 
         const { status, body } = await request(app).get(`/posts/${postReceived?.id}`)
