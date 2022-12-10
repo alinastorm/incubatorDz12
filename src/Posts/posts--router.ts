@@ -18,13 +18,14 @@ import { blogIdBodyInBDValidationMiddleware404 } from '../_common/validators/blo
 import commentsController from '../Comments/comments-controller';
 import { authHeadersJwtAccessTokenHeaders401 } from '../_common/guards/JwtAccessTokenHeaders401-middleware';
 import { authHeadersJwtAccessTokenHeaders } from '../_common/guards/JwtAccessTokenHeaders-middleware';
+import { likeStatusModelSchemaValidationMiddleware } from '../_common/validators/likeStatusSchema-validation-middleware';
 
 
 export const postsRouter = express.Router()
 
 
 postsRouter.get(`/posts/:postId/comments`,
-authHeadersJwtAccessTokenHeaders,
+    authHeadersJwtAccessTokenHeaders,
     pageNumberQueryValidationMiddleware,
     pageSizeQueryValidationMiddleware,
     sortByCommentsQueryValidationMiddleware,
@@ -42,6 +43,7 @@ postsRouter.post(`/posts/:postId/comments`,
     <any> commentsController.createOneByPostId
 )
 postsRouter.get(`/posts`,
+    <any> authHeadersJwtAccessTokenHeaders,
     pageNumberQueryValidationMiddleware,
     pageSizeQueryValidationMiddleware,
     sortByPostsQueryValidationMiddleware,
@@ -50,7 +52,7 @@ postsRouter.get(`/posts`,
     <any> postsController.readAllPaginationSort
 )
 postsRouter.post(`/posts`,
-<any>BasicAuthorizationMiddleware401,
+    <any> BasicAuthorizationMiddleware401,
     titleBodyValidationMiddleware,
     shortdescriptionBodyValidationMiddleware,
     contentBodyValidationMiddleware,
@@ -60,14 +62,14 @@ postsRouter.post(`/posts`,
     postsController.createOne
 )
 postsRouter.get(`/posts/:postId`,
-<any> authHeadersJwtAccessTokenHeaders,
+    <any> authHeadersJwtAccessTokenHeaders,
     postIdParamValidationMiddleware,
     code400,
     postParamIdInBDValidationMiddleware,
     postsController.readOne
 )
 postsRouter.put(`/posts/:postId`,
-<any>BasicAuthorizationMiddleware401,
+    <any> BasicAuthorizationMiddleware401,
     postIdParamValidationMiddleware,
     titleBodyValidationMiddleware,
     shortdescriptionBodyValidationMiddleware,
@@ -79,7 +81,7 @@ postsRouter.put(`/posts/:postId`,
     postsController.updateOne
 )
 postsRouter.delete(`/posts/:postId`,
-<any>BasicAuthorizationMiddleware401,
+    <any> BasicAuthorizationMiddleware401,
     postIdParamValidationMiddleware,
     code400,
     postParamIdInBDValidationMiddleware,
@@ -87,8 +89,9 @@ postsRouter.delete(`/posts/:postId`,
 )
 postsRouter.put("/posts/:postId/like-status",
     <any> authHeadersJwtAccessTokenHeaders401,
+    likeStatusModelSchemaValidationMiddleware,
     // likeStatusModelSchemaValidationMiddleware,
     // commentIdUriParamValidationMiddleware,
-    // code400,
+    code400,
     postsController.likeUnlike
 )

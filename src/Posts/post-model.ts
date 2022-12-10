@@ -89,7 +89,7 @@ ExtendedLikesInfoViewModelSchema.virtual('dislikesCount').get(function () {
     return this.deslike.length;
 });
 ExtendedLikesInfoViewModelSchema.virtual('newestLikes').get(function () {
-    return this.likes.slice(-3);
+    return this.likes.slice(0,3);
 });
 
 ExtendedLikesInfoViewModelSchema.set('toObject', { virtuals: true })
@@ -137,7 +137,8 @@ export const PostModel = model("posts", postSchema)
 export function postDataMapper(value: LeanDocument<PostBdModel & Required<{ _id: string; }>> | null): PostViewModel | null {
     if (!value) return null
     const result: PostViewModel = {
-        id: value._id,
+        //@ts-ignore
+        id: value._id??value.id,
         title: value.title,
         blogId: value.blogId,
         blogName: value.blogName,

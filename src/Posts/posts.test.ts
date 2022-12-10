@@ -4,6 +4,7 @@ import { BlogInputModel, BlogViewModel } from "../Blogs/blog-model"
 import { Paginator } from "../_common/abstractions/Repository/repository-mongodb-types"
 import { ExtendedLikesInfoViewModel, LikeDetailsViewModel, PostInputModel, PostViewModel } from "./post-model"
 import mongooseClinet from "../_common/services/mongoose/mongoose-client"
+import { LikeStatus } from "../Likes/like-model"
 
 
 //Express
@@ -54,6 +55,22 @@ describe("Posts", () => {
         createdAt: expect.any(String),
         extendedLikesInfo: ExtendedLikesInfoViewSchema
     }
+    const newExtendedLikesInfoViewSchema: ExtendedLikesInfoViewModel = {
+        likesCount: 0,
+        dislikesCount: 0, //	integer($int32) 
+        myStatus: LikeStatus.None, //string Enum: Array[3]    
+        newestLikes: []
+    }
+    const newPostViewSchema: PostViewModel = {
+        id: expect.any(String),
+        title: expect.any(String),
+        shortDescription: expect.any(String),
+        content: expect.any(String),
+        blogId: expect.any(String),
+        blogName: expect.any(String),
+        createdAt: expect.any(String),
+        extendedLikesInfo: newExtendedLikesInfoViewSchema
+    }
     const postPaginationSchema: Paginator<PostViewModel> = {
         page: expect.any(Number),
         pagesCount: expect.any(Number),
@@ -78,11 +95,11 @@ describe("Posts", () => {
         "content": "string2",
     }
 
-    test('All delete', async () => {
+    test('1 All delete', async () => {
         const { status } = await request(app).delete("/testing/all-data")
         expect(status).toBe(204)
     })
-    test('Получаем посты =[]', async () => {
+    test('2 Получаем посты =[]', async () => {
 
         const res = await request(app).get("/posts")
 
@@ -96,14 +113,14 @@ describe("Posts", () => {
         })
 
     })
-    test('Создаем пост unauthorized', async () => {
+    test('3 Создаем пост unauthorized', async () => {
         const req = await request(app)
             .post("/posts")
             .send(newPost)
 
         expect(checkData(req, "statusCode", 401)).toBe(true)
     })
-    test('Создаем блог для публикации поста ', async () => {
+    test('4 Создаем блог для публикации поста ', async () => {
         const { status, body } = await request(app)
             .post("/blogs")
             .set('Authorization', 'Basic YWRtaW46cXdlcnR5')
@@ -112,24 +129,22 @@ describe("Posts", () => {
         expect(status).toBe(201)
 
     })
-    test('Получаем блоги для публикации поста', async () => {
+    test('5 Получаем блоги для публикации поста', async () => {
         const { status, body } = await request(app).get("/blogs")
         expect(status).toBe(200)
         newPost.blogId = body.items[0].id
     })
-    test('Публикуем пост', async () => {
-        const { status, body } = await request(app)
-
-            .post("/posts")
+    test('6 Создаем пост', async () => {
+        const { status, body } = await request(app).post("/posts")
             .set('Authorization', 'Basic YWRtaW46cXdlcnR5')
             .send(newPost)
 
 
         expect(status).toBe(201)
-        expect(body).toMatchObject(postViewSchema)
+        expect(body).toMatchObject(newPostViewSchema)
         postReceived = body
     })
-    test('Получаем посты []', async () => {
+    test('7 Получаем посты []', async () => {
 
         const { status, body } = await request(app).get("/posts")
 
@@ -139,21 +154,33 @@ describe("Posts", () => {
             "page": 1,
             "pageSize": 10,
             "totalCount": 1,
-            "items": [postViewSchema]
+            "items": [newPostViewSchema]
         })
 
     })
+    test('7.1 Получаем посты по блог id', async () => {
 
-
-    test('Получаем пост по id', async () => {
-
-        const { status, body } = await request(app).get(`/posts/${postReceived?.id}`)
+        const { status, body } = await request(app).get(`/blogs/${newPost.blogId}/posts`)
 
         expect(status).toBe(200)
-        expect(body).toMatchObject(postViewSchema)
+        expect(body).toStrictEqual({
+            "pagesCount": 1,
+            "page": 1,
+            "pageSize": 10,
+            "totalCount": 1,
+            "items": [newPostViewSchema]
+        })
+
+    })
+    test('8 Получаем пост по id', async () => {
+
+        const { status, body } = await request(app).get(`/posts/${postReceived?.id}`)//
+
+        expect(status).toBe(200)
+        expect(body).toMatchObject(newPostViewSchema)
         expect(body).toStrictEqual(postReceived)
     })
-    test('Обновляем пост', async () => {
+    test('9 Обновляем пост', async () => {
         const { status, body } = await request(app)
             .put(`/posts/${postReceived?.id}`)
             .set('Authorization', 'Basic YWRtaW46cXdlcnR5')
@@ -162,17 +189,17 @@ describe("Posts", () => {
         expect(status).toBe(204)
 
     })
-    test('Получаем пост по id после обновления ', async () => {
+    test('10 Получаем пост по id после обновления ', async () => {
 
 
         const { status, body } = await request(app).get(`/posts/${postReceived?.id}`)
 
         expect(status).toBe(200)
-        expect(body).toMatchObject(postViewSchema)
+        expect(body).toMatchObject(newPostViewSchema)
         expect(body).toStrictEqual({ ...postReceived, ...updatePost })
 
     })
-    test('Удаляем пост по id', async () => {
+    test('11 Удаляем пост по id', async () => {
 
         const { status } = await request(app)
             .delete(`/posts/${postReceived?.id}`)
@@ -180,7 +207,7 @@ describe("Posts", () => {
 
         expect(status).toBe(204)
     })
-    test('Получаем пост после удаления ', async () => {
+    test('12 Получаем пост после удаления ', async () => {
         const { status } = await request(app).get(`/posts/${postReceived?.id}`)
 
         expect(status).toBe(404)

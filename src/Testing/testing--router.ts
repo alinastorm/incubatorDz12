@@ -16,8 +16,8 @@ testingRouter.get('/',
 testingRouter.delete('/testing/all-data',
     testingController.deleteAll,
 )
-testingRouter.all("*", (req: Request, res, next) => {
-    // if (req.url === "/auth/refresh-token") {
+testingRouter.all("/blogs/*/posts", (req: Request, res, next) => {
+    // if (req.url === "/blogs/:blogId/posts") {
     // console.log("*****************************************");
     // console.log('\x1b[36m%s\x1b[0m', 'req.method:', req.method, req.url);
     // console.log('\x1b[32m%s\x1b[0m', 'req.body:', req.body);

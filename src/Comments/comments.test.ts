@@ -7,6 +7,8 @@ import { UserInputModel } from "../Users/user-model"
 import { LoginInputModel } from "../Auth/Authentications/auth-model"
 import { BlogInputModel, BlogViewModel } from "../Blogs/blog-model"
 import mongooseClinet from "../_common/services/mongoose/mongoose-client"
+import { LikeStatus } from "../Likes/like-model"
+
 
 
 //Express
@@ -89,13 +91,29 @@ describe(`${mainRout}`, () => {
     }
     const postViewSchema: PostViewModel = {
         id: expect.any(String),
-        title: expect.any(String), 
+        title: expect.any(String),
         shortDescription: expect.any(String),
         content: expect.any(String),
         blogId: expect.any(String),
         blogName: expect.any(String),
         createdAt: expect.any(String),
         extendedLikesInfo: ExtendedLikesInfoViewSchema
+    }
+    const newExtendedLikesInfoViewSchema: ExtendedLikesInfoViewModel = {
+        likesCount: 0,
+        dislikesCount: 0, //	integer($int32) 
+        myStatus: LikeStatus.None, //string Enum: Array[3]    
+        newestLikes: []
+    }
+    const newPostViewSchema: PostViewModel = {
+        id: expect.any(String),
+        title: expect.any(String),
+        shortDescription: expect.any(String),
+        content: expect.any(String),
+        blogId: expect.any(String),
+        blogName: expect.any(String),
+        createdAt: expect.any(String),
+        extendedLikesInfo: newExtendedLikesInfoViewSchema
     }
 
     let postReceived: PostViewModel
@@ -125,23 +143,23 @@ describe(`${mainRout}`, () => {
         websiteUrl: expect.any(String),
         createdAt: expect.any(String),
     }
-    xtest(`All delete`, async () => {
+    test(`1 All delete`, async () => {
         const { status } = await request(app).delete("/testing/all-data")
         expect(status).toBe(204)
     })
-    xtest(`GET ${mainRout} =[null]`, async () => {
+    test(`2 Comments =[null]`, async () => {
         const comments = await CommentModel.repositoryReadAll<CommentBdModel>()
         expect(comments).toStrictEqual([])
 
     })
-    test(`Create User`, async () => {
+    test(`3 Create User`, async () => {
         const { status } = await request(app).post("/users")
             .set('Authorization', 'Basic YWRtaW46cXdlcnR5')
             .send(user)
 
         expect(status).toBe(201)
     })
-    test(`Auth login`, async () => {
+    test(`4 Auth login`, async () => {
         const res = await request(app).post("/auth/login")
             .send(auth)
 
@@ -158,35 +176,34 @@ describe(`${mainRout}`, () => {
         expect(tokenName).toBe("refreshToken")
         expect(refreshTokenRecived).toStrictEqual(expect.any(String))
     })
-    test('POST Create Blog ', async () => {
-        const req = await request(app)
-            .post("/blogs")
+    test('5 Create Blog ', async () => {
+        const { body, statusCode } = await request(app).post("/blogs")
             .set('Authorization', 'Basic YWRtaW46cXdlcnR5')
             .send(newBlog)
 
 
-        expect(checkData(req, "statusCode", 201)).toBe(true)
-        expect(req.body).toMatchObject(blogSchema)
+        expect(statusCode).toBe(201)
+        expect(body).toMatchObject(blogSchema)
 
-        blogReceived = req.body
+        blogReceived = body
         newPost.blogId = blogReceived.id
     })
-    test('POST Create Post', async () => {
+    test('6 Create Post', async () => {
         const { status, body } = await request(app).post("/posts")
             .set('Authorization', 'Basic YWRtaW46cXdlcnR5')
             .send(newPost)
 
         expect(status).toBe(201)
-        expect(body).toMatchObject(postViewSchema)
+        expect(body).toMatchObject(newPostViewSchema)
         postReceived = body
     })
-    test(`POST Create Comment unauthorized`, async () => {
+    test(`7 Create Comment unauthorized`, async () => {
         const { status, body } = await request(app).post(`/posts/${postReceived.id}/comments`)
             .send(newElement)
 
         expect(status).toBe(401)
     })
-    test(`POST Create Comment authorized`, async () => {
+    test(`8 POST Create Comment authorized`, async () => {
         const req = await request(app).post(`/posts/${postReceived.id}/comments`)
             .auth(accessTokenRecived, { type: 'bearer' })
             .send(newElement)
@@ -197,14 +214,14 @@ describe(`${mainRout}`, () => {
 
         elementReceived = req.body
     })
-    test(`GET ${mainRout} ID extends ${mainRout}Schema`, async () => {
+    test(`9 GET Comments ID extends ${mainRout}Schema`, async () => {
         const { status, body } = await request(app).get(`/${mainRout}/${elementReceived?.id}`)
 
         expect(status).toBe(200)
         expect(body).toMatchObject(elementSchema)
         expect(body).toStrictEqual(elementReceived)
     })
-    test(`PUT ${mainRout} `, async () => {
+    test(`10 Update Comment`, async () => {
 
         const { status } = await request(app).put(`/${mainRout}/${elementReceived?.id}`)
             .auth(accessTokenRecived, { type: 'bearer' })
@@ -213,7 +230,7 @@ describe(`${mainRout}`, () => {
         expect(status).toBe(204)
 
     })
-    test(`GET ${mainRout} after update = new elem `, async () => {
+    test(`11 GET Comments after update = new elem `, async () => {
 
         const { status, body } = await request(app).get(`/${mainRout}/${elementReceived?.id}`)
 
@@ -221,17 +238,17 @@ describe(`${mainRout}`, () => {
         expect(body).toStrictEqual({ ...elementReceived, ...elementToUpdate })
 
     })
-    test.skip(`GET ${mainRout}S after update`, async () => {
+    // test(`12 GET Comments after update`, async () => {
 
-        const { status, body } = await request(app).get(`/${mainRout}`)
+    //     const { status, body } = await request(app).get(`/${mainRout}`)
 
-        expect(status).toBe(200)
-        expect(body).toMatchObject(paginationSchema)//проверка схемы пагинации
-        expect(body).toStrictEqual(elementPaginationSchema)//проверка схемы пагинации и  элемента
-        expect(body.items.length).toBe(1)
-        expect(body.items[0]).toStrictEqual({ ...elementReceived, ...elementToUpdate })
-    })
-    test(`Delete ${mainRout} by ID`, async () => {
+    //     expect(status).toBe(200)
+    //     expect(body).toMatchObject(paginationSchema)//проверка схемы пагинации
+    //     expect(body).toStrictEqual(elementPaginationSchema)//проверка схемы пагинации и  элемента
+    //     expect(body.items.length).toBe(1)
+    //     expect(body.items[0]).toStrictEqual({ ...elementReceived, ...elementToUpdate })
+    // })
+    test(`12 Delete ${mainRout} by ID`, async () => {
 
         const res = await request(app)
             .delete(`/${mainRout}/${elementReceived?.id}`)
@@ -240,7 +257,7 @@ describe(`${mainRout}`, () => {
 
         expect(checkData(res, "status", 204)).toBe(true)
     })
-    test(`GET ${mainRout} after delete `, async () => {
+    test(`13 GET ${mainRout} after delete `, async () => {
         const { status } = await request(app).get(`/${mainRout}/${elementReceived?.id}`)
         expect(status).toBe(404)
 

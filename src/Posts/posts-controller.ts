@@ -36,31 +36,45 @@ class PostsController {
         res.status(HTTP_STATUSES.OK_200).send(result)
     }
     async readAllPaginationSort(
-        req: RequestWithQuery<{ pageNumber: number, pageSize: number, sortBy: keyof PostViewModel, sortDirection: 1 | -1 }>,
+        req: RequestWithQuery<{ pageNumber: number, pageSize: number, sortBy: keyof PostViewModel, sortDirection: 1 | -1 }> &
+            RequestWithAccessTokenJWTBearer,
         res: ResponseWithBodyCode<Paginator<PostViewModel>, 200>
     ) {
+        const userId = req.user?.userId
         const { pageNumber, pageSize, sortBy, sortDirection } = req.query
         const query: SearchPaginationMongooseModel<PostBdModel> = { pageNumber, pageSize, sortBy, sortDirection }
-        const paginatorPosts: Paginator<PostViewModel> = await PostModel.repositoryReadAllOrByPropPaginationSort(query) as any
-        const items = paginatorPosts.items.map((post): PostViewModel => {
-            return {
-                id: post.id,
-                title: post.title,
-                blogId: post.blogId,
-                blogName: post.blogName,
-                content: post.content,
-                createdAt: post.createdAt,
-                extendedLikesInfo: {
-                    dislikesCount: post.extendedLikesInfo.dislikesCount,
-                    likesCount: post.extendedLikesInfo.likesCount,
-                    myStatus: post.extendedLikesInfo.myStatus,
-                    newestLikes: post.extendedLikesInfo.newestLikes,
-                },
-                shortDescription: post.shortDescription,
-            }
-        })
-        const result = { ...paginatorPosts, items }
-        res.status(HTTP_STATUSES.OK_200).json(result)
+        PostModel.schema.virtual('extendedLikesInfo.myStatus').get(function () {
+            //@ts-ignore
+            const likes = this.extendedLikesInfo.likes.filter((elem) => elem.userId === userId)
+            //@ts-ignore
+            const deslikes = this.extendedLikesInfo.deslike.filter((elem) => elem.userId === userId)
+
+            const result: LikeStatus =
+                (likes[0] ? LikeStatus.Like : undefined) ||
+                (deslikes[0] ? LikeStatus.Dislike : undefined) ||
+                LikeStatus.None
+            return result
+        });
+        const paginatorPosts: Paginator<PostViewModel> = await PostModel.repositoryReadAllOrByPropPaginationSort(query, postDataMapper) as any
+        // const items = paginatorPosts.items.map((post): PostViewModel => {
+        //     return {
+        //         id: post.id,
+        //         title: post.title,
+        //         blogId: post.blogId,
+        //         blogName: post.blogName,
+        //         content: post.content,
+        //         createdAt: post.createdAt,
+        //         extendedLikesInfo: {
+        //             dislikesCount: post.extendedLikesInfo.dislikesCount,
+        //             likesCount: post.extendedLikesInfo.likesCount,
+        //             myStatus: post.extendedLikesInfo.myStatus,
+        //             newestLikes: post.extendedLikesInfo.newestLikes,
+        //         },
+        //         shortDescription: post.shortDescription,
+        //     }
+        // })
+        // const result = { ...paginatorPosts, items }
+        res.status(HTTP_STATUSES.OK_200).send(paginatorPosts)
     }
     async createOne(
         req: RequestWithBody<PostInputModel>,
@@ -82,30 +96,29 @@ class PostsController {
             return LikeStatus.None;
         });
         //@ts-ignore
-        const post: any | null = await PostModel.findById(id).lean({ virtuals: true }) as any
+        const post: any | null = await PostModel.findById(id).lean({ virtuals: true }).then(postDataMapper) as any
         // const post: PostViewModel | null = await PostModel.findById(id).populate(
         //     {
         //         path: 'extendedLikesInfo', populate:
         //             { path: 'myStatus', transform: (doc, blogId) => doc }
         //     }).lean({ virtuals: true }) as any
-        const post2: PostViewModel | null = await PostModel.findById(id) as any
         if (!post) return res.status(HTTP_STATUSES.BAD_REQUEST_400)
-        const result: PostViewModel = {
-            id: post._id,
-            title: post.title,
-            blogId: post.blogId,
-            blogName: post.blogName,
-            content: post.content,
-            createdAt: post.createdAt,
-            extendedLikesInfo: {
-                dislikesCount: post.extendedLikesInfo.dislikesCount,
-                likesCount: post.extendedLikesInfo.likesCount,
-                myStatus: post.extendedLikesInfo.myStatus,
-                newestLikes: post.extendedLikesInfo.newestLikes,
-            },
-            shortDescription: post.shortDescription,
-        }
-        res.status(HTTP_STATUSES.CREATED_201).send(result)
+        // const result: PostViewModel = {
+        //     id: post._id,
+        //     title: post.title,
+        //     blogId: post.blogId,
+        //     blogName: post.blogName,
+        //     content: post.content,
+        //     createdAt: post.createdAt,
+        //     extendedLikesInfo: {
+        //         dislikesCount: post.extendedLikesInfo.dislikesCount,
+        //         likesCount: post.extendedLikesInfo.likesCount,
+        //         myStatus: post.extendedLikesInfo.myStatus,
+        //         newestLikes: post.extendedLikesInfo.newestLikes,
+        //     },
+        //     shortDescription: post.shortDescription,
+        // }
+        res.status(HTTP_STATUSES.CREATED_201).send(post)
     }
     async readOne(
         req: RequestWithParams<{ postId: string }> &
@@ -114,22 +127,20 @@ class PostsController {
             ResponseWithCode<404>
     ) {
         const postId = req.params.postId
-        const userId = req.user!.userId
+        const userId = req.user?.userId
 
         PostModel.schema.virtual('extendedLikesInfo.myStatus').get(function () {
             //@ts-ignore
             const likes = this.extendedLikesInfo.likes.filter((elem) => elem.userId === userId)
             //@ts-ignore
             const deslikes = this.extendedLikesInfo.deslike.filter((elem) => elem.userId === userId)
-            console.log("userId:", userId);
 
             const result: LikeStatus =
                 (likes[0] ? LikeStatus.Like : undefined) ||
-                (deslikes[0] ? LikeStatus.None : undefined) ||
+                (deslikes[0] ? LikeStatus.Dislike : undefined) ||
                 LikeStatus.None
             return result
         });
-
 
         const post = await PostModel.findById(postId).lean({
             virtuals: true,
@@ -174,38 +185,52 @@ class PostsController {
         await PostModel.repositoryDeleteAll()
         res.sendStatus(HTTP_STATUSES.NO_CONTENT_204)
     }
-    async readAllPostsByBlogIdWithPaginationAndSort(
-        req: RequestWithParamsQuery<{ blogId: string }, { pageNumber: number, pageSize: number, sortBy: keyof PostViewModel, sortDirection: 1 | -1 }>,
+    async readAllPostsByBlogIdWithPaginationAndSort(//тут2
+        req: RequestWithParamsQuery<{ blogId: string }, { pageNumber: number, pageSize: number, sortBy: keyof PostViewModel, sortDirection: 1 | -1 }>
+        & RequestWithAccessTokenJWTBearer,
         res: ResponseWithBodyCode<Paginator<PostViewModel>, 200 | 404>
     ) {
+        const userId = req.user?.userId
         const blogId = req.params.blogId
         const { pageNumber, pageSize, sortBy, sortDirection } = req.query
         const filter: FilterQuery<PostViewModel> = { blogId }
-
         const query: SearchPaginationMongooseModel = { pageNumber, pageSize, sortBy, sortDirection, filter }
-        const paginatorPosts: Paginator<PostViewModel> = await PostModel.repositoryReadAllOrByPropPaginationSort<PostBdModel>(query) as any
+        
+        PostModel.schema.virtual('extendedLikesInfo.myStatus').get(function () {
+            //@ts-ignore
+            const likes = this.extendedLikesInfo.likes.filter((elem) => elem.userId === userId)
+            //@ts-ignore
+            const deslikes = this.extendedLikesInfo.deslike.filter((elem) => elem.userId === userId)
+
+            const result: LikeStatus =
+                (likes[0] ? LikeStatus.Like : undefined) ||
+                (deslikes[0] ? LikeStatus.Dislike : undefined) ||
+                LikeStatus.None
+            return result
+        });
+        const paginatorPosts: Paginator<PostViewModel> = await PostModel.repositoryReadAllOrByPropPaginationSort<PostBdModel>(query, postDataMapper) as any
         if (!paginatorPosts) {
             return res.sendStatus(HTTP_STATUSES.NOT_FOUND_404)
         }
-        const items = paginatorPosts.items.map((post): PostViewModel => {
-            return {
-                id: post.id,
-                title: post.title,
-                blogId: post.blogId,
-                blogName: post.blogName,
-                content: post.content,
-                createdAt: post.createdAt,
-                extendedLikesInfo: {
-                    dislikesCount: post.extendedLikesInfo.dislikesCount,
-                    likesCount: post.extendedLikesInfo.likesCount,
-                    myStatus: post.extendedLikesInfo.myStatus,
-                    newestLikes: post.extendedLikesInfo.newestLikes,
-                },
-                shortDescription: post.shortDescription,
-            }
-        })
-        const result = { ...paginatorPosts, items }
-        res.status(HTTP_STATUSES.OK_200).send(result)
+        // const items = paginatorPosts.items.map((post): PostViewModel => {
+        //     return {
+        //         id: post.id,
+        //         title: post.title,
+        //         blogId: post.blogId,
+        //         blogName: post.blogName,
+        //         content: post.content,
+        //         createdAt: post.createdAt,
+        //         extendedLikesInfo: {
+        //             dislikesCount: post.extendedLikesInfo.dislikesCount,
+        //             likesCount: post.extendedLikesInfo.likesCount,
+        //             myStatus: post.extendedLikesInfo.myStatus,
+        //             newestLikes: post.extendedLikesInfo.newestLikes,
+        //         },
+        //         shortDescription: post.shortDescription,
+        //     }
+        // })
+        // const result = { ...paginatorPosts, items }
+        res.status(HTTP_STATUSES.OK_200).send(paginatorPosts)
     }
     async createPostsByBlogId(
         req: RequestWithParamsBody<{ blogId: string }, PostInputModel>,
@@ -219,25 +244,28 @@ class PostsController {
         const createdAt = new Date().toISOString()
         const query: Omit<PostViewModel, 'id'> = { blogId, blogName, content, createdAt, shortDescription, title } as any
         const id = await PostModel.repositoryCreateOne<PostBdModel>(<any> query)
-        const post: PostViewModel | null = await PostModel.repositoryReadOne<PostBdModel>(id) as any
+        PostModel.schema.virtual('extendedLikesInfo.myStatus').get(function () {
+            return LikeStatus.None;
+        });
+        const post: PostViewModel | null = await PostModel.repositoryReadOne<PostBdModel>(id).then(postDataMapper) as any
         if (!post) return res.status(HTTP_STATUSES.NOT_FOUND_404)
-        const result: PostViewModel = {
-            id: post.id,
-            title: post.title,
-            blogId: post.blogId,
-            blogName: post.blogName,
-            content: post.content,
-            createdAt: post.createdAt,
-            extendedLikesInfo: {
-                dislikesCount: post.extendedLikesInfo.dislikesCount,
-                likesCount: post.extendedLikesInfo.likesCount,
-                myStatus: post.extendedLikesInfo.myStatus,
-                newestLikes: post.extendedLikesInfo.newestLikes,
-            },
-            shortDescription: post.shortDescription,
-        }
+        // const result: PostViewModel = {
+        //     id: post.id,
+        //     title: post.title,
+        //     blogId: post.blogId,
+        //     blogName: post.blogName,
+        //     content: post.content,
+        //     createdAt: post.createdAt,
+        //     extendedLikesInfo: {
+        //         dislikesCount: post.extendedLikesInfo.dislikesCount,
+        //         likesCount: post.extendedLikesInfo.likesCount,
+        //         myStatus: post.extendedLikesInfo.myStatus,
+        //         newestLikes: post.extendedLikesInfo.newestLikes,
+        //     },
+        //     shortDescription: post.shortDescription,
+        // }
 
-        res.status(HTTP_STATUSES.CREATED_201).send(result)
+        res.status(HTTP_STATUSES.CREATED_201).send(post)
     }
     async likeUnlike(
         req: RequestWithBody<LikeInputModel>
@@ -249,74 +277,62 @@ class PostsController {
         const userId = req.user!.userId
         const postId = req.params.postId
         //проверка posta
-        const post = await PostModel.findById(postId).lean()
+        const post = await PostModel.findById(postId)
         if (!post) return res.status(HTTP_STATUSES.NOT_FOUND_404).send("post not found")
         //блок обновления информации о лайках
-        if (likeStatus === LikeStatus.Like) {
-            const user = await UserModel.findById(userId).lean()
-            if (!user) return res.status(HTTP_STATUSES.NOT_FOUND_404).send("user not found")
-            const login = user.login
+        const user = await UserModel.findById(userId).lean()
+        if (!user) return res.status(HTTP_STATUSES.NOT_FOUND_404).send("user not found")
 
+        if (likeStatus === LikeStatus.Like) {
+            const login = user.login
             const likes = post?.extendedLikesInfo.likes
             const deslikes = post?.extendedLikesInfo.deslike
             const addedAt = new Date().toISOString()
             const elem: LikeDetailsViewModel = { addedAt, login, userId }
-            likes.push(elem)
+            const likeFiltered = likes.filter((elem) => elem.userId != userId)
             const deslikesFiltered = deslikes.filter((elem) => elem.userId != userId)
             //добавляем лайки
+            likeFiltered.unshift(elem)
+            //@ts-ignore TODO
+            post.extendedLikesInfo.likes = likeFiltered
             //удаляем дизлайки
-            const postInstance = await PostModel.findById(postId)
             //@ts-ignore TODO
-            postInstance.extendedLikesInfo.likes = [...new Set(likes)]
-            //@ts-ignore TODO
-            postInstance.extendedLikesInfo.deslike = [...deslikesFiltered]
-            const result = await postInstance?.save()
-
-
+            post.extendedLikesInfo.deslike = deslikesFiltered
         }
         if (likeStatus === LikeStatus.Dislike) {
-            const user = await UserModel.findById(userId).lean()
-            if (!user) return res.status(HTTP_STATUSES.NOT_FOUND_404).send("user not found")
             const login = user.login
 
             const likes = post?.extendedLikesInfo.likes
             const deslikes = post?.extendedLikesInfo.deslike
             const addedAt = new Date().toISOString()
             const elem: LikeDetailsViewModel = { addedAt, login, userId }
-            deslikes.push(elem)
+            const deslikesFiltered = deslikes.filter((elem) => elem.userId != userId)
             const likesFiltered = likes.filter((elem) => elem.userId != userId)
-
             //добавляем дизлайки
+            deslikesFiltered.unshift(elem)
+
             //удаляем лайки
-            const postInstance = await PostModel.findById(postId)
+            // const postInstance = await PostModel.findById(postId)
             //@ts-ignore TODO
-            postInstance.extendedLikesInfo.likes = [...likesFiltered]
+            post.extendedLikesInfo.likes = likesFiltered
             //@ts-ignore TODO
-            postInstance.extendedLikesInfo.deslike = [...new Set(deslikes)]
-            const result = await postInstance?.save()
+            post.extendedLikesInfo.deslike = deslikesFiltered
 
         }
         if (likeStatus === LikeStatus.None) {
-            const user = await UserModel.findById(userId).lean()
-            if (!user) return res.status(HTTP_STATUSES.NOT_FOUND_404).send("user not found")
-            const login = user.login
-
             const likes = post?.extendedLikesInfo.likes
             const deslikes = post?.extendedLikesInfo.deslike
-
-
-            const deslikesFiltered = deslikes.filter((elem) => elem.userId != userId)
             const likesFiltered = likes.filter((elem) => elem.userId != userId)
-
+            const deslikesFiltered = deslikes.filter((elem) => elem.userId != userId)
             //удаляем дизлайки
             //удаляем лайки
-            const postInstance = await PostModel.findById(postId)
+            // const postInstance = await PostModel.findById(postId)
             //@ts-ignore TODO
-            postInstance.extendedLikesInfo.likes = [...deslikesFiltered]
+            post.extendedLikesInfo.likes = likesFiltered
             //@ts-ignore TODO
-            postInstance.extendedLikesInfo.deslike = [...likesFiltered]
-            const result = await postInstance?.save()
+            post.extendedLikesInfo.deslike = deslikesFiltered
         }
+        const result = await post?.save()
 
         // const comment = await CommentModel.repositoryReadOne<CommentBdModel>(postId)
         // if (!comment) return res.sendStatus(404)

@@ -18,6 +18,7 @@ import blogsController from './blogs-controller';
 import { blogIdParamInBDValidationMiddleware } from '../_common/validators/blogIdParamInBD-validation-middleware';
 import { descriptionBodyValidationMiddleware } from '../_common/validators/description-body-validation-middleware';
 import postsController from '../Posts/posts-controller';
+import { authHeadersJwtAccessTokenHeaders } from '../_common/guards/JwtAccessTokenHeaders-middleware';
 
 
 export const blogsRouter = express.Router()
@@ -40,6 +41,7 @@ blogsRouter.post(`/blogs`,
     blogsController.createOne
 )
 blogsRouter.get(`/blogs/:blogId/posts`,
+<any> authHeadersJwtAccessTokenHeaders,
     blogIdParamUriValidationMiddleware,
     pageNumberQueryValidationMiddleware,
     pageSizeQueryValidationMiddleware,

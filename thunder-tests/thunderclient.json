@@ -367,5 +367,19 @@
       }
     },
     "tests": []
+  },
+  {
+    "_id": "a6e72fef-b851-4ce8-9aa7-7b0fd772a3e8",
+    "colId": "c30dfe65-b2e7-425f-a725-ea8335d1a876",
+    "containerId": "",
+    "name": "Get blogs by postId",
+    "url": "https://ubt.by:9002/blogs/6394fa78f746b01297d2091b/posts",
+    "method": "GET",
+    "sortNum": 10000,
+    "created": "2022-12-10T21:33:06.468Z",
+    "modified": "2022-12-10T21:34:18.990Z",
+    "headers": [],
+    "params": [],
+    "tests": []
   }
 ]

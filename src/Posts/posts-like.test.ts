@@ -82,19 +82,26 @@ describe(`${mainRout}`, () => {
         userId: expect.any(String), //	string    nullable: true,
         login: expect.any(String), //	string    nullable: true}
     }
-    const ExtendedLikesInfoViewSchema: ExtendedLikesInfoViewModel = {
-        likesCount: 0,
-        dislikesCount: 0, //	integer($int32) 
-        myStatus: LikeStatus.None, //string Enum: Array[3]    
-        newestLikes: []
-    }
+
     const ExtendedLikesInfoLikeViewSchema: ExtendedLikesInfoViewModel = {
         likesCount: 1,
         dislikesCount: 0, //	integer($int32) 
         myStatus: LikeStatus.Like, //string Enum: Array[3]    
         newestLikes: [LikeDetailsViewSchema]
     }
-    const postViewSchema: PostViewModel = {
+    const ExtendedDislikeInfoLikeViewSchema: ExtendedLikesInfoViewModel = {
+        likesCount: 0,
+        dislikesCount: 1, //	integer($int32) 
+        myStatus: LikeStatus.Dislike, //string Enum: Array[3]    
+        newestLikes: []
+    }
+    const newExtendedLikesInfoViewSchema: ExtendedLikesInfoViewModel = {
+        likesCount: 0,
+        dislikesCount: 0, //	integer($int32) 
+        myStatus: LikeStatus.None, //string Enum: Array[3]    
+        newestLikes: []
+    }
+    const newPostViewSchema: PostViewModel = {
         id: expect.any(String),
         title: expect.any(String),
         shortDescription: expect.any(String),
@@ -102,7 +109,7 @@ describe(`${mainRout}`, () => {
         blogId: expect.any(String),
         blogName: expect.any(String),
         createdAt: expect.any(String),
-        extendedLikesInfo: ExtendedLikesInfoViewSchema
+        extendedLikesInfo: newExtendedLikesInfoViewSchema
     }
     const postViewSchemaLike: PostViewModel = {
         id: expect.any(String),
@@ -114,8 +121,21 @@ describe(`${mainRout}`, () => {
         createdAt: expect.any(String),
         extendedLikesInfo: ExtendedLikesInfoLikeViewSchema
     }
+    const postViewDislike: PostViewModel = {
+        id: expect.any(String),
+        title: expect.any(String),
+        shortDescription: expect.any(String),
+        content: expect.any(String),
+        blogId: expect.any(String),
+        blogName: expect.any(String),
+        createdAt: expect.any(String),
+        extendedLikesInfo: ExtendedDislikeInfoLikeViewSchema
+    }
     const likeLike: LikeInputModel = {
         "likeStatus": LikeStatus.Like
+    }
+    const Dislike: LikeInputModel = {
+        "likeStatus": LikeStatus.Dislike
     }
     let postReceived: PostViewModel
     //auth
@@ -144,6 +164,7 @@ describe(`${mainRout}`, () => {
         websiteUrl: expect.any(String),
         createdAt: expect.any(String),
     }
+
     xtest(`1 All delete`, async () => {
         const { status } = await request(app).delete("/testing/all-data")
         expect(status).toBe(204)
@@ -153,7 +174,6 @@ describe(`${mainRout}`, () => {
         expect(comments).toStrictEqual([])
 
     })
-
     test(`3 Create User`, async () => {
         const { status } = await request(app).post("/users")
             .set('Authorization', 'Basic YWRtaW46cXdlcnR5')
@@ -199,8 +219,17 @@ describe(`${mainRout}`, () => {
 
 
         expect(status).toBe(201)
-        expect(body).toMatchObject(postViewSchema)
+        expect(body).toMatchObject(newPostViewSchema)
         postReceived = body
+    })
+    test(`7.1 Получаем пост неавторизированным пользователем = likestatus.none`, async () => {
+
+        const { status, body } = await request(app).get(`/posts/${postReceived?.id}`)
+
+        expect(status).toBe(200)
+        expect(body).toMatchObject(newPostViewSchema)
+        expect(body).toStrictEqual(postReceived)
+
     })
     //Лайкаем Post
     test(`8 PUT POST set like Like`, async () => {
@@ -211,11 +240,82 @@ describe(`${mainRout}`, () => {
 
     })
     //Получаем комментарий по id смотрим есть ли лайк и likesCount 1 с accessToken0123
-
     test(`9 GET POst by ID is like like`, async () => {
         const { status, body } = await request(app).get(`/posts/${postReceived?.id}`)
             .auth(accessTokenRecived, { type: 'bearer' })
         expect(body).toMatchObject(postViewSchemaLike)
+
+        expect(status).toBe(200)
+        // expect(body).toMatchObject(commentSchema)
+        // expect(body.likesInfo).toMatchObject(likesInfo)
+        // expect(body.likesInfo).toStrictEqual({
+        //     dislikesCount: 0,
+        //     likesCount: 1,
+        //     myStatus: LikeStatus.Like,
+        // })
+
+    })
+    //Лайкаем Post второй раз
+    test(`10 PUT POST set like Like`, async () => {
+        const { status, body } = await request(app).put(`/posts/${postReceived?.id}/like-status`)
+            .auth(accessTokenRecived, { type: 'bearer' })
+            .send(likeLike)
+        expect(status).toBe(204)
+
+    })
+    //Получаем комментарий по id смотрим есть ли лайк и likesCount 1 с accessToken0123
+    test(`11 GET POst by ID is like like`, async () => {
+        const { status, body } = await request(app).get(`/posts/${postReceived?.id}`)
+            .auth(accessTokenRecived, { type: 'bearer' })
+        expect(body).toMatchObject(postViewSchemaLike)
+
+        expect(status).toBe(200)
+        // expect(body).toMatchObject(commentSchema)
+        // expect(body.likesInfo).toMatchObject(likesInfo)
+        // expect(body.likesInfo).toStrictEqual({
+        //     dislikesCount: 0,
+        //     likesCount: 1,
+        //     myStatus: LikeStatus.Like,
+        // })
+
+    })
+    //Дизлайк Post
+    test(`12 PUT POST set like = Dislike`, async () => {
+        const { status, body } = await request(app).put(`/posts/${postReceived?.id}/like-status`)
+            .auth(accessTokenRecived, { type: 'bearer' })
+            .send(Dislike)
+        expect(status).toBe(204)
+
+    })
+    //Получаем комментарий по id смотрим есть ли лайк и likesCount 1 с accessToken0123
+    test(`13 GET POst by ID is like like`, async () => {
+        const { status, body } = await request(app).get(`/posts/${postReceived?.id}`)
+            .auth(accessTokenRecived, { type: 'bearer' })
+        expect(body).toMatchObject(postViewDislike)
+
+        expect(status).toBe(200)
+        // expect(body).toMatchObject(commentSchema)
+        // expect(body.likesInfo).toMatchObject(likesInfo)
+        // expect(body.likesInfo).toStrictEqual({
+        //     dislikesCount: 0,
+        //     likesCount: 1,
+        //     myStatus: LikeStatus.Like,
+        // })
+
+    })
+    //Дизлайк Post повторно
+    test(`14 PUT POST set like = Dislike`, async () => {
+        const { status, body } = await request(app).put(`/posts/${postReceived?.id}/like-status`)
+            .auth(accessTokenRecived, { type: 'bearer' })
+            .send(Dislike)
+        expect(status).toBe(204)
+
+    })
+    //Получаем комментарий по id смотрим есть ли лайк и likesCount 1 с accessToken0123
+    test(`15 GET POst by ID is like Dislike`, async () => {
+        const { status, body } = await request(app).get(`/posts/${postReceived?.id}`)
+            .auth(accessTokenRecived, { type: 'bearer' })
+        expect(body).toMatchObject(postViewDislike)
 
         expect(status).toBe(200)
         // expect(body).toMatchObject(commentSchema)

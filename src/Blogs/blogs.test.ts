@@ -4,6 +4,7 @@ import { BlogInputModel, BlogViewModel } from "./blog-model"
 import { Paginator } from "../_common/abstractions/Repository/repository-mongodb-types"
 import { ExtendedLikesInfoViewModel, LikeDetailsViewModel, PostInputModel, PostViewModel } from "../Posts/post-model"
 import mongooseClinet from "../_common/services/mongoose/mongoose-client"
+import { LikeStatus } from "../Likes/like-model"
 
 
 //Express
@@ -74,7 +75,7 @@ describe("Blogs", () => {
     }
     const postViewSchema: PostViewModel = {
         id: expect.any(String),
-        title: expect.any(String), 
+        title: expect.any(String),
         shortDescription: expect.any(String),
         content: expect.any(String),
         blogId: expect.any(String),
@@ -82,12 +83,28 @@ describe("Blogs", () => {
         createdAt: expect.any(String),
         extendedLikesInfo: ExtendedLikesInfoViewSchema
     }
+    const newExtendedLikesInfoViewSchema: ExtendedLikesInfoViewModel = {
+        likesCount: 0,
+        dislikesCount: 0, //	integer($int32) 
+        myStatus: LikeStatus.None, //string Enum: Array[3]    
+        newestLikes: []
+    }
+    const newPostViewSchema: PostViewModel = {
+        id: expect.any(String),
+        title: expect.any(String),
+        shortDescription: expect.any(String),
+        content: expect.any(String),
+        blogId: expect.any(String),
+        blogName: expect.any(String),
+        createdAt: expect.any(String),
+        extendedLikesInfo: newExtendedLikesInfoViewSchema
+    }
 
-    test('All delete', async () => {
+    test('1 All delete', async () => {
         const { status } = await request(app).delete("/testing/all-data")
         expect(status).toBe(204)
     })
-    test('GET Blogs =[]', async () => {
+    test('2 GET Blogs =[]', async () => {
         const { status, body } = await request(app).get("/blogs")
 
         expect(status).toBe(200)
@@ -101,7 +118,7 @@ describe("Blogs", () => {
         })
 
     })
-    test('POST Blogs unauthorized', async () => {
+    test('3 POST Blogs unauthorized', async () => {
         const { status, body } = await request(app)
             .post("/blogs")
             .send({
@@ -111,7 +128,7 @@ describe("Blogs", () => {
 
         expect(status).toBe(401)
     })
-    test('POST Create Blog ', async () => {
+    test('4 POST Create Blog ', async () => {
         const req = await request(app)
             .post("/blogs")
             .set('Authorization', 'Basic YWRtaW46cXdlcnR5')
@@ -123,7 +140,7 @@ describe("Blogs", () => {
 
         blogReceived = req.body
     })
-    test('GET Blogs []', async () => {
+    test('5 GET Blogs []', async () => {
         const { status, body } = await request(app).get("/blogs")
 
         expect(status).toBe(200)
@@ -137,14 +154,14 @@ describe("Blogs", () => {
         })
 
     })
-    test('GET Blogs ID', async () => {
+    test('6 GET Blogs ID', async () => {
         const { status, body } = await request(app).get(`/blogs/${blogReceived?.id}`)
 
         expect(status).toBe(200)
         expect(body).toMatchObject(blogSchema)
         expect(body).toStrictEqual(blogReceived)
     })
-    test('PUT Blogs ', async () => {
+    test('7 PUT Blogs ', async () => {
 
         const { status } = await request(app)
             .put(`/blogs/${blogReceived?.id}`)
@@ -154,7 +171,7 @@ describe("Blogs", () => {
         expect(status).toBe(204)
 
     })
-    test('GET Blog after update ', async () => {
+    test('8 GET Blog after update ', async () => {
 
         const { status, body } = await request(app).get(`/blogs/${blogReceived?.id}`)
 
@@ -163,7 +180,7 @@ describe("Blogs", () => {
         expect(body).toStrictEqual({ ...blogReceived, ...blogUpdate })
 
     })
-    test('GET Blogs after update', async () => {
+    test('9 GET Blogs after update', async () => {
 
         const { status, body } = await request(app).get("/blogs")
 
@@ -179,25 +196,22 @@ describe("Blogs", () => {
         expect(body.items.length).toBe(1)
         expect(body.items[0]).toStrictEqual({ ...blogReceived, ...blogUpdate })
     })
-    test('POST newPost in Blog by Blog ID', async () => {
-        const { status, body } = await request(app)
-            .post(`/blogs/${blogReceived?.id}/posts`)
+    test('10 Create Post in Blog by Blog ID', async () => {
+        const { status, body } = await request(app).post(`/blogs/${blogReceived?.id}/posts`)
             .set('Authorization', 'Basic YWRtaW46cXdlcnR5')
             .send(newPost)
 
         expect(status).toBe(201)
-        expect(body).toMatchObject(postViewSchema)
+        expect(body).toMatchObject(newPostViewSchema)
         // post = body
     })
-    test('Delete Blog by ID', async () => {
-
-        const { status } = await request(app)
-            .delete(`/blogs/${blogReceived?.id}`)
+    test('11 Delete Blog by ID', async () => {
+        const { status } = await request(app).delete(`/blogs/${blogReceived?.id}`)
             .set('Authorization', 'Basic YWRtaW46cXdlcnR5')
 
         expect(status).toBe(204)
     })
-    test('GET Blog after delete ', async () => {
+    test('12 GET Blog after delete ', async () => {
         const { status } = await request(app).get(`/blogs/${blogReceived?.id}`)
 
         expect(status).toBe(404)
