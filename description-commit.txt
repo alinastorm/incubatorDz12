@@ -9,3 +9,4 @@
 1.0.8 feat:refactor mongoose mapper tests work
 1.0.9 feat:dz complete
 1.0.10 feat: for me description
+1.0.11 feat: posts query
