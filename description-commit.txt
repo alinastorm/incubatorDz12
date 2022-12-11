@@ -8,3 +8,4 @@
 1.0.7 feat:refactor mongoose virtual
 1.0.8 feat:refactor mongoose mapper tests work
 1.0.9 feat:dz complete
+1.0.10 feat: for me description

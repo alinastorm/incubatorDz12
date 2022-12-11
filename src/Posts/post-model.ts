@@ -138,7 +138,7 @@ export function postDataMapper(value: LeanDocument<PostBdModel & Required<{ _id:
     if (!value) return null
     const result: PostViewModel = {
         //@ts-ignore
-        id: value._id??value.id,
+        id: value._id??value.id,//value.id так как пихаю в старый модуль repository а он мапит _id=>id 
         title: value.title,
         blogId: value.blogId,
         blogName: value.blogName,
