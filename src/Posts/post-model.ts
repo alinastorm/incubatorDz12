@@ -1,4 +1,4 @@
-import { Schema, model, LeanDocument } from "mongoose";
+import { Schema, model, LeanDocument, Model } from "mongoose";
 import { LikeStatus } from "../Likes/like-model";
 import { RepositoryMongoose } from "../_common/abstractions/Repository/Repository-mongoose";
 import mongooseLeanVirtuals from 'mongoose-lean-virtuals'
@@ -82,14 +82,14 @@ export const ExtendedLikesInfoViewModelSchema = new Schema<ExtendedLikesInfoBdMo
 // }, { versionKey: false, _id: false, toObject: { virtuals: true }, toJSON: { virtuals: true } })
 ExtendedLikesInfoViewModelSchema.plugin(mongooseLeanVirtuals);
 
-ExtendedLikesInfoViewModelSchema.virtual('likesCount').get(function () {
+ExtendedLikesInfoViewModelSchema.virtual('likesCount').get(function (this: ExtendedLikesInfoBdModel) {
     return this.likes.length;
 });
-ExtendedLikesInfoViewModelSchema.virtual('dislikesCount').get(function () {
+ExtendedLikesInfoViewModelSchema.virtual('dislikesCount').get(function (this: ExtendedLikesInfoBdModel) {
     return this.deslike.length;
 });
-ExtendedLikesInfoViewModelSchema.virtual('newestLikes').get(function () {
-    return this.likes.slice(0,3);
+ExtendedLikesInfoViewModelSchema.virtual('newestLikes').get(function (this: ExtendedLikesInfoBdModel) {
+    return this.likes.slice(0, 3);
 });
 
 ExtendedLikesInfoViewModelSchema.set('toObject', { virtuals: true })
@@ -138,7 +138,7 @@ export function postDataMapper(value: LeanDocument<PostBdModel & Required<{ _id:
     if (!value) return null
     const result: PostViewModel = {
         //@ts-ignore
-        id: value._id??value.id,//value.id так как пихаю в старый модуль repository а он мапит _id=>id 
+        id: value._id ?? value.id,//value.id так как пихаю в старый модуль repository а он мапит _id=>id 
         title: value.title,
         blogId: value.blogId,
         blogName: value.blogName,
